@@ -1,6 +1,7 @@
 import data_io
 import author
 import paper    
+import pickle
 
 class Parser:
     
@@ -33,14 +34,24 @@ class Parser:
             paper_id = res[0]
             author_id = res[1]
             curr_paper = self.papers[paper_id]
-            curr_author = self.authors[author_id]
-            curr_author.update_paper(curr_paper)
+            curr_author = None
+            if author_id in self.authors.keys():
+                curr_author = self.authors[author_id]
+                curr_author.update_paper(curr_paper)
             for coauthor_id in curr_paper.authors.keys():
-                coauthor = self.authors[coauthor_id]
-                coauthor.update_coauthors(author_id)
-                coauthor.num_coauthors += 1
-                curr_author.update_coauthor(coauthor_id)
-                curr_author.num_coauthors += 1
+                if coauthor_id in self.authors.keys():
+                    coauthor = self.authors[coauthor_id]
+                    coauthor.update_coauthors(author_id)
+                    coauthor.num_coauthors += 1
+                    if curr_author:
+                        curr_author.update_coauthors(coauthor_id)
+                        curr_author.num_coauthors += 1
             curr_paper.add_author(author_id)
         print "Done"
+        
+if __name__ == "__main__":
+    p = Parser()
+    p.parse()
+    with open("parser.pkl") as output:
+        pickle.dump(p, output)
         
