@@ -9,6 +9,22 @@ class Parser:
         self.authors = dict()
         self.papers = dict()
 
+
+    def update_paperauthor(self, curr_paper, curr_author, author_id):
+        if curr_author:
+            curr_author.update_paper(curr_paper)
+        if curr_paper:
+            for coauthor_id in curr_paper.authors.keys():
+                if coauthor_id in self.authors.keys():
+                    coauthor = self.authors[coauthor_id]
+                    coauthor.update_coauthors(author_id)
+                    coauthor.num_coauthors += 1
+                    if curr_author:
+                        curr_author.update_coauthors(coauthor_id)
+                        curr_author.num_coauthors += 1
+            curr_paper.add_author(author_id)
+            
+        
     def parse(self):
         conn = data_io.get_db_conn()
         cursor = conn.cursor()
@@ -33,20 +49,13 @@ class Parser:
         for res in cursor:
             paper_id = res[0]
             author_id = res[1]
-            curr_paper = self.papers[paper_id]
             curr_author = None
+            curr_paper = None
+            if paper_id in self.papers.keys():
+                curr_paper = self.papers[paper_id]
             if author_id in self.authors.keys():
                 curr_author = self.authors[author_id]
-                curr_author.update_paper(curr_paper)
-            for coauthor_id in curr_paper.authors.keys():
-                if coauthor_id in self.authors.keys():
-                    coauthor = self.authors[coauthor_id]
-                    coauthor.update_coauthors(author_id)
-                    coauthor.num_coauthors += 1
-                    if curr_author:
-                        curr_author.update_coauthors(coauthor_id)
-                        curr_author.num_coauthors += 1
-            curr_paper.add_author(author_id)
+            self.update_paperauthor(curr_paper, curr_author, author_id)
         print "Done"
         
 if __name__ == "__main__":

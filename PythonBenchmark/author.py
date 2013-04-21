@@ -74,6 +74,8 @@ class Author:
     
     def update_paper(self, paper):
         self.num_papers += 1
+        if not paper:
+            return
         if paper.conference_id != 0:
             self.num_conference_papers += 1
             self.update_conferences(paper.conference_id)
