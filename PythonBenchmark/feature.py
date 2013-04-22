@@ -115,3 +115,65 @@ class Feature:
         year_based = self.create_year_based_features(auth, year_id)
         
         return (global_features + paper_based + coauthor_based + conference_based + journal_based + year_based)
+    
+    def create_features_from_res(self, res):
+        author_id = int(res[0])
+        auth = self.parser.authors.get(author_id)
+        if not auth:
+            return None
+        
+        for pap_str in res[1].split():
+            pap_id = int(pap_str)
+            pap = self.parser.papers.get(pap_id)
+            auth.update_positive_paper(pap)
+            if pap:
+                for coathor_id in pap.authors.keys():
+                    coauthor = self.parser.authors.get(coathor_id)
+                    auth.num_positive_coauthors += 1
+                    auth.update_positive_coauthors(coathor_id)
+                    if coauthor:
+                        coauthor.num_positive_coauthors += 1
+                        coauthor.update_positive_coauthors(author_id)
+
+        for pap_str in res[2].split():
+            pap_id = int(pap_str)
+            pap = self.parser.papers.get(pap_id)
+            auth.update_negative_paper(pap)
+            if pap:
+                for coathor_id in pap.authors.keys():
+                    coauthor = self.parser.authors.get(coathor_id)
+                    auth.num_negative_coauthors += 1
+                    auth.update_negative_coauthors(coathor_id)
+                    if coauthor:
+                        coauthor.num_negative_coauthors += 1
+                        coauthor.update_negative_coauthors(author_id)
+                        
+        ret_X = None
+        ret_y = None
+        
+        global_features = self.create_global_author_features(auth)
+        # Create positive features
+        for pap_str in res[1].split():
+            pap_id = int(pap_str)
+            pap = self.parser.papers.get(pap_id)
+            if not pap:
+                continue
+            all_features = self.create_all_features(global_features, auth, pap)
+            if ret_X:
+                ret_X = numpy.vstack((ret_X, all_features))
+                ret_y.append(1)
+            else:
+                ret_X = numpy.array(all_features)
+                ret_y = [1]
+        
+        #Create negative features
+        for pap_str in res[2].split():
+            pap_id = int(pap_str)
+            pap = self.parser.papers.get(pap_id)
+            if not pap:
+                continue
+            all_features = self.create_all_features(global_features, auth, pap)
+            ret_X = numpy.vstack((ret_X, all_features))
+            ret_y.append(0)
+            
+        return (ret_X, ret_y)

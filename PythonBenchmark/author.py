@@ -1,4 +1,4 @@
-from paper import Paper
+import paper
 
 class Author:
 
@@ -88,15 +88,41 @@ class Author:
     def update_negative_years(self, year_id):
         self._update_dict(self.negative_years, year_id, 1)
 
-    def update_paper(self, paper):
+    def update_paper(self, pap):
         self.num_papers += 1
         self.num_years += 1
-        if not paper:
+        if not pap:
             return
-        self.update_years(paper.year)
-        if paper.conference_id != 0:
+        self.update_years(pap.year)
+        if pap.conference_id != 0:
             self.num_conference_papers += 1
-            self.update_conferences(paper.conference_id)
-        if paper.journal_id != 0:
+            self.update_conferences(pap.conference_id)
+        if pap.journal_id != 0:
             self.num_journal_papers += 1
-            self.update_journals(paper.journal_id)
+            self.update_journals(pap.journal_id)
+
+    def update_positive_paper(self, pap):
+        self.num_positive_papers += 1
+        self.num_positive_years += 1
+        if not pap:
+            return
+        self.update_positive_years(pap.year)
+        if pap.conference_id != 0:
+            self.num_positive_conference_papers += 1
+            self.update_positive_conferences(pap.conference_id)
+        if pap.journal_id != 0:
+            self.num_positive_journal_papers += 1
+            self.update_positive_journals(pap.journal_id)
+
+    def update_negative_paper(self, pap):
+        self.num_negative_papers += 1
+        self.num_negative_years += 1
+        if not pap:
+            return
+        self.update_negative_years(pap.year)
+        if pap.conference_id != 0:
+            self.num_negative_conference_papers += 1
+            self.update_negative_conferences(pap.conference_id)
+        if pap.journal_id != 0:
+            self.num_negative_journal_papers += 1
+            self.update_negative_journals(pap.journal_id)
