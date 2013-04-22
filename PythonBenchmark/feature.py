@@ -13,32 +13,37 @@ class Feature:
         num_conference_papers = auth.num_conference_papers
         num_journal_papers = auth.num_journal_papers
         num_coauthors = auth.num_coauthors
-        ret = ret + [num_papers, num_conference_papers, num_journal_papers, num_coauthors]
+        num_years = auth.num_years
+        ret = ret + [num_papers, num_conference_papers, num_journal_papers, num_coauthors, num_years]
         
         num_positive_papers = auth.num_positive_papers
         num_positive_conference_papers = auth.num_positive_conference_papers
         num_positive_journal_papers = auth.num_positive_journal_papers
         num_positive_coauthors = auth.num_positive_coauthors
-        ret = ret + [num_positive_papers, num_positive_conference_papers, num_positive_journal_papers, num_positive_coauthors]
+        num_positive_years = auth.num_positive_years
+        ret = ret + [num_positive_papers, num_positive_conference_papers, num_positive_journal_papers, num_positive_coauthors, num_positive_years]
         
         num_negative_papers = auth.num_negative_papers
         num_negative_conference_papers = auth.num_negative_conference_papers
         num_negative_journal_papers = auth.num_negative_journal_papers
         num_negative_coauthors = auth.num_negative_coauthors
-        ret = ret + [num_positive_coauthors, num_negative_conference_papers, num_negative_journal_papers, num_negative_coauthors]
+        num_negative_years = auth.num_negative_years
+        ret = ret + [num_positive_coauthors, num_negative_conference_papers, num_negative_journal_papers, num_negative_coauthors, num_negative_years]
         
         #Fractions
         frac_positive_papers = float(num_positive_papers) / float(num_papers)
         frac_positive_conference_papers = float(num_positive_conference_papers) / float(num_conference_papers)
         frac_positive_journal_papers = float(num_positive_journal_papers) / float(num_journal_papers)
         frac_positive_coauthors = float(num_positive_coauthors) / float(num_coauthors)
-        ret = ret + [frac_positive_papers, frac_positive_conference_papers, frac_positive_journal_papers, frac_positive_coauthors]
+        frac_positive_years = float(num_positive_years) / float(num_years)
+        ret = ret + [frac_positive_papers, frac_positive_conference_papers, frac_positive_journal_papers, frac_positive_coauthors, frac_positive_years]
         
         frac_negative_papers = float(num_negative_papers) / float(num_papers)
         frac_negative_conference_papers = float(num_negative_conference_papers) / float(num_conference_papers)
         frac_negative_journal_papers = float(num_negative_journal_papers) / float(num_journal_papers)
         frac_negative_coauthors = float(num_negative_coauthors) / float(num_coauthors)
-        ret = ret + [frac_negative_papers, frac_negative_conference_papers, frac_negative_journal_papers, frac_negative_coauthors]
+        frac_negative_years = float(num_negative_years) / float(num_years)
+        ret = ret + [frac_negative_papers, frac_negative_conference_papers, frac_negative_journal_papers, frac_negative_coauthors, frac_negative_years]
         
         return ret
         
@@ -57,6 +62,14 @@ class Feature:
         frac_positive_journals = float(positive_journals) / float(all_journals)
         frac_negative_journals = float(negative_journals) / float(all_journals)
         return [all_journals, positive_journals, negative_journals, frac_positive_journals, frac_negative_journals]
+    
+    def create_year_based_features(self, auth, year_id):
+        all_years = auth.all_years.get(year_id) or 1
+        positive_years = auth.positive_years.get(year_id) or 0
+        negative_years = auth.negative_years.get(year_id) or 0
+        frac_positive_years = float(positive_years) / float(all_years)
+        frac_negative_years = float(negative_years) / float(all_years)
+        return [all_years, positive_years, negative_years, frac_positive_years, frac_negative_years]
     
     def create_coauthor_based_features(self, auth, pap):
         sum_authors = 0
@@ -98,4 +111,7 @@ class Feature:
         journal_id = pap.journal_id
         journal_based = self.create_journal_based_features(auth, journal_id)
         
-        return (global_features + paper_based + coauthor_based + conference_based + journal_based)
+        year_id = pap.year
+        year_based = self.create_year_based_features(auth, year_id)
+        
+        return (global_features + paper_based + coauthor_based + conference_based + journal_based + year_based)

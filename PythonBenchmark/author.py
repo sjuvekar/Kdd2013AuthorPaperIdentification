@@ -12,16 +12,19 @@ class Author:
         self.num_conference_papers = 0
         self.num_journal_papers = 0
         self.num_coauthors = 0
+        self.num_years = 0
         
         self.num_positive_papers = 0
         self.num_positive_conference_papers = 0
         self.num_positive_journal_papers = 0
         self.num_positive_coauthors = 0
+        self.num_positive_years = 0
         
         self.num_negative_papers = 0
         self.num_negative_conference_papers = 0
         self.num_negative_journal_papers = 0
         self.num_negative_coauthors = 0
+        self.num_negative_years = 0
         
         self.all_keywords = dict()
         self.positive_keywords = dict()
@@ -39,6 +42,10 @@ class Author:
         self.positive_journals = dict()
         self.negative_journals = dict()
 
+        self.all_years = dict()
+        self.all_positive_years = dict()
+        self.all_negative_years = dict()
+        
     def _update_dict(self, d, key, value):
         if key in d.keys():
             d[key] = d[key] + value
@@ -72,10 +79,21 @@ class Author:
     def update_negative_coauthors(self, coauthor_id):
         self._update_dict(self.negative_coauthors, coauthor_id, 1)
     
+    def update_years(self, year_id):
+        self._update_dict(self.all_years, year_id, 1)
+
+    def update_positive_years(self, year_id):
+        self._update_dict(self.positive_years, year_id, 1)
+        
+    def update_negative_years(self, year_id):
+        self._update_dict(self.negative_years, year_id, 1)
+
     def update_paper(self, paper):
         self.num_papers += 1
+        self.num_years += 1
         if not paper:
             return
+        self.update_years(paper.year)
         if paper.conference_id != 0:
             self.num_conference_papers += 1
             self.update_conferences(paper.conference_id)
