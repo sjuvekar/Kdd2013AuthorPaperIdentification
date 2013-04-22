@@ -43,8 +43,8 @@ class Author:
         self.negative_journals = dict()
 
         self.all_years = dict()
-        self.all_positive_years = dict()
-        self.all_negative_years = dict()
+        self.positive_years = dict()
+        self.negative_years = dict()
         
     def _update_dict(self, d, key, value):
         if key in d.keys():

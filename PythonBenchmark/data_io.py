@@ -2,7 +2,7 @@ import csv
 import json
 import os
 import pickle
-import psycopg2
+#import psycopg2
 
 def paper_ids_to_string(ids):
     return " ".join([str(x) for x in ids])

@@ -2,5 +2,11 @@
     "model_path": "../Models/basicCoauthorBenchmark.pickle",
     "submission_path": "../Submissions/basicCoauthorBenchmark.csv",
     "parser_path": "../Models/parser.pickle",
+    "author_processed_path": "../data/Author_processed.csv",
+    "paper_processed_path": "../data/Paper_processed.csv",
+    "paperauthor_processed_path": "../data/PaperAuthor_processed.csv",
+    "train_path": "../data/Train.csv",
+    "valid_path": "../data/Valid.csv",
+    "feature_path": "../data/features.csv",
     "postgres_conn_string": "host='localhost' dbname='Kdd2013AuthorPaperIdentification' user='postgres' password='sudeepramola'"
 }

@@ -12,6 +12,8 @@ class Paper:
         self.keywords = keywords
         #
         self.authors = dict()
+        self.positive_authors = dict()
+        self.negative_authors = dict()
 
     def add_author(self, author_id):
         self.authors[author_id] = 1
