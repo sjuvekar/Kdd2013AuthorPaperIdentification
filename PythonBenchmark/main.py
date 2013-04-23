@@ -30,7 +30,7 @@ def train(f, file_path):
 def predict(f, classifier, file_path):
   file_pt = open(file_path, "r")
   title = file_pt.readline()
-  output = open("submission.csv", "a")
+  output = open(data_io.get_paths()["submission_path"], "a")
   for l in file_pt.readlines():
     res = l.split(",")
     fet = f.create_features_from_res(res)
@@ -43,7 +43,6 @@ def predict(f, classifier, file_path):
 if __name__ == "__main__":
   p = parser.Parser()
   p.parse_csv()
-  p.update_using_train()
   f = feature.Feature(p)
   classifier = train(f, data_io.get_paths()["train_path"])
   predict(f, classifier, data_io.get_paths()["valid_path"])

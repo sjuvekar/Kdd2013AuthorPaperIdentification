@@ -1,6 +1,7 @@
 import data_io
 import author
 import paper    
+import nlp
 import pickle
 
 class Parser:
@@ -8,22 +9,13 @@ class Parser:
     def __init__(self):
         self.authors = dict()
         self.papers = dict()
-
+        self.affiliations = dict()
+        self.surnames = dict()
 
     def update_paperauthor(self, curr_paper, curr_author, author_id):
         if curr_author:
             curr_author.update_paper(curr_paper)
         if curr_paper:
-            """
-            for coauthor_id in curr_paper.authors.keys():
-                if coauthor_id in self.authors.keys():
-                    coauthor = self.authors[coauthor_id]
-                    coauthor.update_coauthors(author_id)
-                    coauthor.num_coauthors += 1
-                    if curr_author:
-                        curr_author.update_coauthors(coauthor_id)
-                        curr_author.num_coauthors += 1
-            """
             curr_paper.add_author(author_id)
     
     def parse(self):
@@ -63,25 +55,38 @@ class Parser:
     def parse_csv(self):
         # Create authors
         print "Parsing Authors..."
-        f = open("../data/Author_processed.csv", "r")
+        f = open(data_io.get_paths()["author_processed_path"], "r")
         titles = f.readline()
-        while True:
-            l = f.readline()
-            if not l:
-              break
+        count = 0
+        for l in f.readlines():
+            count += 1
+            if count % 100000 == 0:
+                print count
             res = l.strip().split(",")
-            self.authors[int(res[0])] = author.Author(int(res[0]), res[1], res[2])
+            # Titles
+            raw_title = res[1]
+            (name, surname) = nlp.filter_title(raw_title)
+            if surname in self.surnames.keys():
+                self.surnames[surname] = self.surnames[surname] + 1
+            else:
+                self.surnames[surname] = 1
+
+            #Affiliations
+            raw_affiliation = res[2]
+            affiliation = nlp.filter_affiliation(raw_affiliation)
+            if affiliation in self.affiliations.keys():
+                self.affiliations[affiliation] = self.affiliations[affiliation] + 1
+            else:
+                self.affiliations[affiliation] = 1
+            self.authors[int(res[0])] = author.Author(int(res[0]), name, surname, affiliation)
         print "Done"
         f.close()
 
         # Create Papers
         print "Parsing Papers..."
-        f = open("../data/Paper_processed.csv", "r")
+        f = open(data_io.get_paths()["paper_processed_path"], "r")
         titles = f.readline()
-        while True:
-            l = f.readline()
-            if not l:
-              break
+        for l in f.readlines():
             res = l.strip().split(",")
             self.papers[int(res[0])] = paper.Paper(int(res[0]), res[1], int(res[2]), int(res[3]), int(res[4]), res[5])
         print "Done"
@@ -89,16 +94,13 @@ class Parser:
 
         # First Update all journal/conference/coauthor information
         print "Parsing PaperAuthors..."
-        f = open("../data/PaperAuthor_processed.csv", "r")
+        f = open(data_io.get_paths()["paperauthor_processed_path"], "r")
         titles = f.readline()
         count = 0
-        while True:
-            l = f.readline()
+        for l in f.readlines():
             count += 1
             if count % 100000 == 0:
               print count
-            if not l:
-              break
             res = l.strip().split(",")
             if not res[0].isdigit():
               continue
@@ -109,50 +111,6 @@ class Parser:
             self.update_paperauthor(curr_paper, curr_author, author_id)
         print "Done"
         f.close()
-
-
-    def update_using_train(self):
-        print "Updating parser using train csv..."
-        f = open("../data/Train.csv")
-        title = f.readline()
-        for l in f.readlines():
-            res = l.split(",")
-            author_id = int(res[0])
-            auth = self.authors.get(author_id)
-            if not auth:
-                return
-            for pap_str in res[1].split():
-                pap_id = int(pap_str)
-                pap = self.papers.get(pap_id)
-                auth.update_positive_paper(pap)
-                if pap:
-                    pap.positive_authors[author_id] = 1
-                    for coauthor_id in pap.authors.keys():
-                        coauthor = self.authors.get(coauthor_id)
-                        # Update positive and all coauthors here
-                        auth.num_coauthors += 1
-                        auth.num_positive_coauthors += 1
-                        auth.update_coauthors(coauthor_id)
-                        auth.update_positive_coauthors(coauthor_id)
-                    self.papers[pap_id] = pap
-            
-            for pap_str in res[2].split():
-                pap_id = int(pap_str)
-                pap = self.papers.get(pap_id)
-                auth.update_negative_paper(pap)
-                if pap:
-                    pap.negative_authors[author_id] = 1
-                    for coauthor_id in pap.authors.keys():
-                        coauthor = self.authors.get(coauthor_id)
-                        # Update negative and all coauthors here
-                        auth.num_coauthors += 1
-                        auth.num_negative_coauthors += 1
-                        auth.update_coauthors(coauthor_id)
-                        auth.update_negative_coauthors(coauthor_id)
-                    self.papers[pap_id] = pap
-            
-            self.authors[author_id] = auth
-        print "Done"
 
 
 if __name__ == "__main__":
