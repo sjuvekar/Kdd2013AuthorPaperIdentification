@@ -12,13 +12,86 @@ class Parser:
         self.affiliations = dict()
         self.surnames = dict()
 
-    def update_paperauthor(self, curr_paper, curr_author, author_id):
+    def update_paperauthor(self, curr_paper, curr_author, author_id, author_name, author_affiliation):
         if curr_author:
             curr_author.update_paper(curr_paper)
         if curr_paper:
             curr_paper.add_author(author_id)
-    
-    def parse(self):
+            curr_paper.add_author_name(author_id, author_name)
+            curr_paper.add_author_affiliation(author_id, author_affiliation)
+            
+    def parse_authors(self):
+        # Create authors
+        print "Parsing Authors..."
+        f = open(data_io.get_paths()["author_processed_path"], "r")
+        titles = f.readline()
+        for l in f.readlines():
+            res = l.strip().split(",")
+            # Titles
+            raw_title = res[1]
+            (name, surname) = nlp.filter_title(raw_title)
+            if surname in self.surnames.keys():
+                self.surnames[surname] = self.surnames[surname] + 1
+            else:
+                self.surnames[surname] = 1
+
+            #Affiliations
+            raw_affiliation = res[2]
+            affiliation = nlp.filter_affiliation(raw_affiliation)
+            if affiliation in self.affiliations.keys():
+                self.affiliations[affiliation] = self.affiliations[affiliation] + 1
+            else:
+                self.affiliations[affiliation] = 1
+            self.authors[int(res[0])] = author.Author(int(res[0]), name, surname, affiliation)
+        print "Done"
+        f.close()
+
+
+    def parse_papers(self):
+        # Create Papers
+        print "Parsing Papers..."
+        f = open(data_io.get_paths()["paper_processed_path"], "r")
+        titles = f.readline()
+        for l in f.readlines():
+            res = l.strip().split(",")
+            paper_title = res[1]
+            title_words = nlp.filter_paper_title(paper_title)
+            self.papers[int(res[0])] = paper.Paper(int(res[0]), title_words, int(res[2]), int(res[3]), int(res[4]), res[5])
+        print "Done"
+        f.close()
+
+        
+    def parse_paperauthors(self):
+        # Update all journal/conference/coauthor information
+        print "Parsing PaperAuthors..."
+        f = open(data_io.get_paths()["paperauthor_processed_path"], "r")
+        titles = f.readline()
+        count = 0
+        for l in f.readlines():
+            count += 1
+            if count % 100000 == 0:
+              print count
+            res = l.strip().split(",")
+            if not res[0].isdigit():
+              continue
+            paper_id = int(res[0])
+            author_id = int(res[1])
+            author_name = nlp.filter_title(res[2])[0]
+            author_affiliation = nlp.filter_affiliation(res[3])
+            curr_paper = self.papers.get(paper_id)
+            curr_author = self.authors.get(author_id)
+            self.update_paperauthor(curr_paper, curr_author, author_id, author_name, author_affiliation)
+        print "Done"
+        f.close()
+
+
+    def parse_csv(self):
+        self.parse_authors()
+        self.parse_papers()
+        self.parse_paperauthors()
+
+
+    def parse_db(self):
         conn = data_io.get_db_conn()
         cursor = conn.cursor()
 
@@ -51,68 +124,7 @@ class Parser:
             self.update_paperauthor(curr_paper, curr_author, author_id)
         print "Done"
     
-
-    def parse_csv(self):
-        # Create authors
-        print "Parsing Authors..."
-        f = open(data_io.get_paths()["author_processed_path"], "r")
-        titles = f.readline()
-        count = 0
-        for l in f.readlines():
-            count += 1
-            if count % 100000 == 0:
-                print count
-            res = l.strip().split(",")
-            # Titles
-            raw_title = res[1]
-            (name, surname) = nlp.filter_title(raw_title)
-            if surname in self.surnames.keys():
-                self.surnames[surname] = self.surnames[surname] + 1
-            else:
-                self.surnames[surname] = 1
-
-            #Affiliations
-            raw_affiliation = res[2]
-            affiliation = nlp.filter_affiliation(raw_affiliation)
-            if affiliation in self.affiliations.keys():
-                self.affiliations[affiliation] = self.affiliations[affiliation] + 1
-            else:
-                self.affiliations[affiliation] = 1
-            self.authors[int(res[0])] = author.Author(int(res[0]), name, surname, affiliation)
-        print "Done"
-        f.close()
-
-        # Create Papers
-        print "Parsing Papers..."
-        f = open(data_io.get_paths()["paper_processed_path"], "r")
-        titles = f.readline()
-        for l in f.readlines():
-            res = l.strip().split(",")
-            self.papers[int(res[0])] = paper.Paper(int(res[0]), res[1], int(res[2]), int(res[3]), int(res[4]), res[5])
-        print "Done"
-        f.close()
-
-        # First Update all journal/conference/coauthor information
-        print "Parsing PaperAuthors..."
-        f = open(data_io.get_paths()["paperauthor_processed_path"], "r")
-        titles = f.readline()
-        count = 0
-        for l in f.readlines():
-            count += 1
-            if count % 100000 == 0:
-              print count
-            res = l.strip().split(",")
-            if not res[0].isdigit():
-              continue
-            paper_id = int(res[0])
-            author_id = int(res[1])
-            curr_paper = self.papers.get(paper_id)
-            curr_author = self.authors.get(author_id)
-            self.update_paperauthor(curr_paper, curr_author, author_id)
-        print "Done"
-        f.close()
-
-
+        
 if __name__ == "__main__":
     p = Parser()
     p.parse_csv()
