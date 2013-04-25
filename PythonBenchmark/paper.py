@@ -3,13 +3,11 @@ class Paper:
     def __init__(self, _id, title, year, conference_id, journal_id, keywords):
         self.id = _id
         self.title = title
-        #
         self.year = year
         self.conference_id = conference_id
         self.journal_id = journal_id
-        #TODO
         self.keywords = keywords
-        #
+        
         self.authors = dict()
         self.author_names = dict()
         self.author_affiliations = dict()

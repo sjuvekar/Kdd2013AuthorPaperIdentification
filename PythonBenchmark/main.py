@@ -2,7 +2,8 @@ import data_io
 import parser
 import feature
 import numpy
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+from sklearn.cross_validation import train_test_split
 
 def train(f, file_path):
   file_pt = open(file_path, "r")
@@ -16,12 +17,21 @@ def train(f, file_path):
     else:
       ret = fet
   
-  classifier = RandomForestClassifier(n_estimators=50, 
-                                      verbose=2,
-                                      n_jobs=1,
-                                      min_samples_split=10,
-                                      random_state=1)
-  classifier.fit(ret[:, 1:ret.shape[1]], ret[:, 0])
+#  classifier = RandomForestClassifier(n_estimators=50, 
+#                                      verbose=2,
+#                                      n_jobs=1,
+#                                      min_samples_split=10,
+#                                      random_state=1)
+
+  classifier = GradientBoostingClassifier(n_estimators=1024, 
+                                          verbose=3,
+                                          max_depth=6,
+                                          min_samples_split=10,
+                                          subsample=0.8,
+                                          random_state=1)
+
+  trainX, testX, trainY, testY = train_test_split(ret[:, 1:], ret[:, 0])
+  classifier.fit(trainX, trainY)
 
   numpy.savetxt(data_io.get_paths()["feature_path"], ret.astype(float), fmt='%f', delimiter=",")
 

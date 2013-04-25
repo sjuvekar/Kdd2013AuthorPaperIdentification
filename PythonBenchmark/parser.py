@@ -56,7 +56,9 @@ class Parser:
             res = l.strip().split(",")
             paper_title = res[1]
             title_words = nlp.filter_paper_title(paper_title)
-            self.papers[int(res[0])] = paper.Paper(int(res[0]), title_words, int(res[2]), int(res[3]), int(res[4]), res[5])
+            paper_keyword = res[5]
+            filtered_keyword = nlp.filter_paper_keyword(paper_keyword)
+            self.papers[int(res[0])] = paper.Paper(int(res[0]), title_words, int(res[2]), int(res[3]), int(res[4]), filtered_keyword)
         print "Done"
         f.close()
 

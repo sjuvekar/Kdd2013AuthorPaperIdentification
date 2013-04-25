@@ -1,19 +1,28 @@
 import re
 
-stopwords = ["and", "of", "an", "in", "on", "de", "di", "li", "a", "for", "at", "the", "to", "as", "is", ""]
+stopwords = ["and", "of", "an", "in", "on", "de", "di", "li", "a", "for", "at", "the", "to", "as", "is", "by", ""]
+regexp_string = "[|/:;.\(\)\[\]$&*#+!'\" ?\xe2\x80\x93-]+|[0-9]+"
+camelcase_string = '(.)([A-Z][a-z]+)'
 
 def filter_title(raw_title):
     name = re.split("[. ]+", raw_title.lower())
     surname = name[-1]
     return (" ".join(name), surname)
 
-def filter_affiliation(raw_affiliation):
-    camelcase_affiliation = re.sub('(.)([A-Z][a-z]+)', r'\1 \2', raw_affiliation)
-    aff_list = re.split("[|/;.\(\)\[\]$&*#+!'\" -]+|[0-9]+", camelcase_affiliation.lower())
-    final_list = [x for x in aff_list if x not in stopwords]
+def filter_generic(raw_string, camelcase_filter=False):
+    if camelcase_filter:
+      camelcase_output = re.sub(camelcase_string, r'\1 \2', raw_string)
+    else:
+      camelcase_output = raw_string
+    int_list = re.split(regexp_string, camelcase_output.lower())
+    final_list = [x for x in int_list if x not in stopwords]
     return " ".join(sorted(list(set(final_list))))
 
+def filter_affiliation(raw_affiliation):
+    return filter_generic(raw_affiliation, True)
+
 def filter_paper_title(raw_title):
-    title_list = re.split("[|/;:.\(\)\[\]$&*#+!'\" -]+|[0-9]+", raw_title.lower())
-    final_list = [x for x in title_list if x not in stopwords]
-    return final_list
+    return filter_generic(raw_title)
+
+def filter_paper_keyword(raw_keyword):
+    return filter_generic(raw_keyword)
