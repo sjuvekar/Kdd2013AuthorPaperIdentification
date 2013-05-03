@@ -3,6 +3,7 @@ import author
 import paper    
 import nlp
 import pickle
+import unidecode
 
 class Parser:
     
@@ -28,7 +29,7 @@ class Parser:
         for l in f.readlines():
             res = l.strip().split(",")
             # Titles
-            raw_title = res[1]
+            raw_title = unidecode.unidecode(unicode(res[1], encoding="utf-8"))
             (name, surname) = nlp.filter_title(raw_title)
             if surname in self.surnames.keys():
                 self.surnames[surname] = self.surnames[surname] + 1
@@ -36,7 +37,7 @@ class Parser:
                 self.surnames[surname] = 1
 
             #Affiliations
-            raw_affiliation = res[2]
+            raw_affiliation = unidecode.unidecode(unicode(res[2], encoding="utf-8"))
             affiliation = nlp.filter_affiliation(raw_affiliation)
             if affiliation in self.affiliations.keys():
                 self.affiliations[affiliation] = self.affiliations[affiliation] + 1
@@ -54,9 +55,9 @@ class Parser:
         titles = f.readline()
         for l in f.readlines():
             res = l.strip().split(",")
-            paper_title = res[1]
+            paper_title = unidecode.unidecode(unicode(res[1], encoding="utf-8"))
             title_words = nlp.filter_paper_title(paper_title)
-            paper_keyword = res[5]
+            paper_keyword = unidecode.unidecode(unicode(res[5], encoding="utf-8"))
             filtered_keyword = nlp.filter_paper_keyword(paper_keyword)
             self.papers[int(res[0])] = paper.Paper(int(res[0]), title_words, int(res[2]), int(res[3]), int(res[4]), filtered_keyword)
         print "Done"
@@ -69,7 +70,7 @@ class Parser:
         f = open(data_io.get_paths()["paperauthor_processed_path"], "r")
         titles = f.readline()
         count = 0
-        for l in f.readlines():
+        for l in f:
             count += 1
             if count % 100000 == 0:
               print count
@@ -78,8 +79,10 @@ class Parser:
               continue
             paper_id = int(res[0])
             author_id = int(res[1])
-            author_name = nlp.filter_title(res[2])[0]
-            author_affiliation = nlp.filter_affiliation(res[3])
+            raw_author_name = unidecode.unidecode(unicode(res[2], encoding="utf-8"))
+            author_name = nlp.filter_title(raw_author_name)[0]
+            raw_author_affiliation = unidecode.unidecode(unicode(res[3], encoding="utf-8"))
+            author_affiliation = nlp.filter_affiliation(raw_author_affiliation)
             curr_paper = self.papers.get(paper_id)
             curr_author = self.authors.get(author_id)
             self.update_paperauthor(curr_paper, curr_author, author_id, author_name, author_affiliation)

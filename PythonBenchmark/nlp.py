@@ -3,10 +3,16 @@ import re
 stopwords = ["and", "of", "an", "in", "on", "de", "di", "li", "a", "for", "at", "the", "to", "as", "is", "by", ""]
 regexp_string = "[|/:;.\(\)\[\]$&*#+!'\" ?\xe2\x80\x93-]+|[0-9]+"
 camelcase_string = '(.)([A-Z][a-z]+)'
+surnames = ["parthasarathy", "ng"]
+
 
 def filter_title(raw_title):
     name = re.split("[. ]+", raw_title.lower())
+    name = map(lambda a: a.strip(), name)
     surname = name[-1]
+    for s in surnames:
+      if s in name:
+        surname = s
     return (" ".join(name), surname)
 
 def filter_generic(raw_string, camelcase_filter=False):

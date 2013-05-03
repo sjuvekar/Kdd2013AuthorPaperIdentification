@@ -1,7 +1,10 @@
 import author
 import paper
+import parser
 import numpy
 import sys
+import gzip
+import cPickle
 
 class Feature:
     
@@ -80,6 +83,11 @@ class Feature:
         num_people_with_affiliation = self.parser.affiliations.get(auth.affiliation) or 0
         ret = ret + [num_people_with_affiliation]
 
+        # Fractions
+        conf_frac = float(num_conference_papers)/float(num_papers) if num_papers != 0 else 0
+        journal_frac = float(num_journal_papers)/float(num_papers) if num_papers != 0 else 0
+        combined_frac = float(num_conferences)/(float(num_conferences)+float(num_journals)) if (num_conferences+num_journals) != 0 else 0
+        ret = ret + [conf_frac, journal_frac, combined_frac]
         return ret
        
 
@@ -127,7 +135,14 @@ class Feature:
         for keyword_word in pap.keywords.split():
             keyword_freq += keyword_dict[keyword_word]
 
-        return [num_authors, num_papers, num_conference_papers, num_journal_papers, num_conferences, num_journals, num_papers_in_year, num_papers_in_conf_or_journal, conf_or_journal, coauth_freq, title_num, title_freq, keyword_num, keyword_freq]
+        ret = [num_authors, num_papers, num_conference_papers, num_journal_papers, num_conferences, num_journals, num_papers_in_year, num_papers_in_conf_or_journal, conf_or_journal, coauth_freq, title_num, title_freq, keyword_num, keyword_freq]
+
+        # Fractions
+        conf_frac = float(num_conference_papers)/float(num_papers) if num_papers != 0 else 0
+        journal_frac = float(num_journal_papers)/float(num_papers) if num_papers != 0 else 0
+        combined_frac = float(num_conferences)/(float(num_conferences)+float(num_journals)) if (num_conferences+num_journals) != 0 else 0
+        ret = ret + [conf_frac, journal_frac, combined_frac]
+        return ret
 
 
     def create_author_paper_based_features(self, auth, pap):
@@ -144,9 +159,12 @@ class Feature:
             papers_in_relevant_conf_or_journal = (auth.all_conferences.get(pap.conference_id) or 0)
         papers_in_relevant_year = (auth.all_years.get(pap.year) or 0)
 
-        name_in_paper = (pap.author_names.get(auth.id) or "")
+        all_names_in_paper = pap.author_names.get(auth.id) or [""]
+        name_in_paper = max(all_names_in_paper, key=len)
         name_keywords = len(set(auth.name.split()) & set(name_in_paper.split()))
-        affiliations_in_paper = (pap.author_affiliations.get(auth.id) or "")
+
+        all_affiliations_in_paper = pap.author_affiliations.get(auth.id) or [""]
+        affiliations_in_paper = max(all_affiliations_in_paper, key=len)
         affiliation_keywords = len(set(auth.affiliation.split()) & set(affiliations_in_paper.split()))
 
         for auth_id in pap.authors.keys():
@@ -156,7 +174,14 @@ class Feature:
             if other_auth.surname == auth.surname:
                 common_surnames += 1
             common_affiliation += len(set(other_auth.affiliation.split()) & set(auth.affiliation.split()))
-        return [papers_in_relevant_conf_or_journal, papers_in_relevant_year, name_keywords, affiliation_keywords, common_surnames, common_affiliation]
+        return [papers_in_relevant_conf_or_journal, papers_in_relevant_year, len(all_names_in_paper), name_keywords, len(all_affiliations_in_paper), affiliation_keywords, common_surnames, common_affiliation]
+
+
+    def common_papers(self, res):
+        if len(res) < 3:
+            return list()
+        common_set = set(res[1].split()) & set(res[2].split())
+        return map(lambda a:int(a), list(common_set))
 
 
     def create_features_from_res(self, res):
@@ -170,20 +195,28 @@ class Feature:
         paper_keyword_dict = self.create_keyword_dict(res)
         d = [author_dict, paper_title_dict, paper_keyword_dict]
 
+        # Create a list of both accepted and deleted
+        com_pap = self.common_papers(res)
+        
         # Create positive features
         for pap_str in res[1].split():
             pap_id = int(pap_str)
+            if pap_id in com_pap:
+                continue
             pap = self.parser.papers.get(pap_id)
             if not pap:
                 continue
             paper_features = self.create_paper_based_features(pap, d)
             author_paper_features = self.create_author_paper_based_features(auth, pap)
             all_features = author_features + paper_features + author_paper_features
+            # Fractions
+            name_frac = float(author_paper_features[4])/float(author_features[6]) if author_features[6] != 0 else 0
+            design_frac = float(author_paper_features[5])/float(author_features[7]) if author_features[7] != 0 else 0
+            all_features = all_features + [name_frac, design_frac]
             if ret != None:
                 ret = numpy.vstack((ret, [1] + all_features))
             else:
                 ret = numpy.array([1] + all_features)
-            print all_features
 
         if len(res) < 3:
             return ret
@@ -191,12 +224,28 @@ class Feature:
         #Create negative features
         for pap_str in res[2].split():
             pap_id = int(pap_str)
+            if pap_id in com_pap:
+                continue
             pap = self.parser.papers.get(pap_id)
             if not pap:
                 continue
             paper_features = self.create_paper_based_features(pap, d)
             author_paper_features = self.create_author_paper_based_features(auth, pap)
             all_features = author_features + paper_features + author_paper_features
-            ret = numpy.vstack((ret, [0] + all_features))
-            print all_features
+            # Fractions
+            name_frac = float(author_paper_features[4])/float(author_features[6]) if author_features[6] != 0 else 0
+            design_frac = float(author_paper_features[5])/float(author_features[7]) if author_features[7] != 0 else 0
+            all_features = all_features + [name_frac, design_frac]
+            if ret != None:
+                ret = numpy.vstack((ret, [0] + all_features))
+            else:
+                ret = numpy.array([0] + all_features)
         return ret
+
+
+if __name__ == "__main__":
+    p = parser.Parser()
+    p.parse_csv()
+    f = Feature(p)
+    gzout = gzip.open("/export/home/local/sjuvekar/feature.pickle.gz", "wb")
+    cPickle.dump(f, gzout)

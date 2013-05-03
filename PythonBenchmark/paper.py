@@ -16,7 +16,13 @@ class Paper:
         self.authors[author_id] = 1
 
     def add_author_name(self, author_id, author_name):
-        self.author_names[author_id] = author_name
+        if author_id in self.author_names.keys():
+          self.author_names[author_id] = self.author_names[author_id] + [author_name]
+        else:
+          self.author_names[author_id] = [author_name]
 
     def add_author_affiliation(self, author_id, aff):
-        self.author_affiliations[author_id] = aff
+        if author_id in self.author_affiliations.keys():
+          self.author_affiliations[author_id] = self.author_affiliations[author_id] + [aff]
+        else:
+          self.author_affiliations[author_id] = [aff]
