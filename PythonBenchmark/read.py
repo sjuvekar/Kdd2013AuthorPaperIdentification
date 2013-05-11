@@ -30,6 +30,13 @@ def parse_paper(file):
 def parse_paperauthor(file):
   parse(file, data_io.get_paths()["paperauthor_processed_path"])
 
+def parse_conference(file):
+  parse(file, data_io.get_paths()["conference_processed_path"])
+
+def parse_journal(file):
+  parse(file, data_io.get_paths()["journal_processed_path"])
+
+
 def same_line(file):
   f = open(file, "r")
   out = open("../int.csv", "a") 

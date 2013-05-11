@@ -12,6 +12,10 @@ class Parser:
         self.papers = dict()
         self.affiliations = dict()
         self.surnames = dict()
+        self.conferences = dict()
+        self.journals = dict()
+        self.conference_freq = dict()
+        self.journal_freq = dict()
 
     def update_paperauthor(self, curr_paper, curr_author, author_id, author_name, author_affiliation):
         if curr_author:
@@ -90,11 +94,46 @@ class Parser:
         f.close()
 
 
+    def parse_conferences(self):
+        print "Parsing Conferences..."
+        f = open(data_io.get_paths()["conference_processed_path"], "r")
+        titles = f.readline()
+        for l in f.readlines():
+            res = l.strip().split(",")
+            conference_id = int(res[0])
+            raw_conference_title = unidecode.unidecode(unicode(res[2], encoding="utf-8"))
+            conference_title = nlp.filter_paper_title(raw_conference_title)
+            self.conferences[conference_id] = conference_title
+            for c in conference_title.split():
+                if c in self.conference_freq.keys():
+                    self.conference_freq[c] = self.conference_freq[c] + 1
+                else:
+                    self.conference_freq[c] = 1
+
+
+    def parse_journals(self):
+        print "Parsing Journals..."
+        f = open(data_io.get_paths()["journal_processed_path"], "r")
+        titles = f.readline()
+        for l in f.readlines():
+            res = l.strip().split(",")
+            journal_id = int(res[0])
+            raw_journal_title = unidecode.unidecode(unicode(res[2], encoding="utf-8"))
+            journal_title = nlp.filter_paper_title(raw_journal_title)
+            self.journals[journal_id] = journal_title
+            for j in journal_title.split():
+                if j in self.journal_freq.keys():
+                    self.journal_freq[j] = self.journal_freq[j] + 1
+                else:
+                    self.journal_freq[j] = 1
+
+
     def parse_csv(self):
         self.parse_authors()
         self.parse_papers()
         self.parse_paperauthors()
-
+        self.parse_conferences()
+        self.parse_journals()
 
     def parse_db(self):
         conn = data_io.get_db_conn()

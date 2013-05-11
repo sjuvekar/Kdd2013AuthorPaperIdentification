@@ -19,6 +19,10 @@ class Feature:
                 return pap.title.split()
             elif key == "keyword":
                 return pap.keywords.split()
+            elif key == "conference":
+                return (self.parser.conferences.get(pap.conference_id) or "").split()
+            elif key == "journal":
+                return (self.parser.journals.get(pap.journal_id) or "").split()
             else:
                 print "Wrong key " + key
                 sys.exit()
@@ -59,6 +63,14 @@ class Feature:
 
     def create_keyword_dict(self, res):
         return self.create_generic_dict(res, "keyword")
+
+
+    def create_conference_dict(self, res):
+        return self.create_generic_dict(res, "conference")
+
+
+    def create_journal_dict(self, res):
+        return self.create_generic_dict(res, "journal")
 
 
     def create_author_based_features(self, auth):
@@ -102,14 +114,21 @@ class Feature:
         year = pap.year
         num_papers_in_conf_or_journal = 0
         conf_or_journal = 0
+        conf_or_journal_keywords = 0
+        conf_or_journal_freq = 0
+
         author_dict = d[0]
         title_dict = d[1]
         keyword_dict = d[2]
+        conference_dict = d[3]
+        journal_dict = d[4]
+
         coauth_freq = 0
         title_num = len(pap.title.split())
         title_freq = 0
         keyword_num = len(pap.keywords.split())
         keyword_freq = 0
+        conf_or_journal_across_freq = 0
 
         for auth_id in pap.authors.keys():
           auth = self.parser.authors.get(auth_id)
@@ -121,12 +140,22 @@ class Feature:
           num_conferences += auth.num_conferences()
           num_journals += auth.num_journals()
           num_papers_in_year += (auth.all_years.get(year) or 0)
+
           if pap.conference_id == 0:
             num_papers_in_conf_or_journal += (auth.all_journals.get(pap.journal_id) or 0)
             conf_or_journal = 1
+            relevant_conf_or_journal = self.parser.journals.get(pap.journal_id) or ""
+            for w in relevant_conf_or_journal.split():
+                conf_or_journal_freq += (self.parser.journal_freq.get(w) or 0)
+                conf_or_journal_across_freq += (journal_dict.get(w) or 0)
           else:
             num_papers_in_conf_or_journal += (auth.all_conferences.get(pap.conference_id) or 0)
             conf_or_journal = 0
+            relevant_conf_or_journal = self.parser.conferences.get(pap.conference_id) or ""
+            for w in relevant_conf_or_journal.split():
+                conf_or_journal_freq += (self.parser.conference_freq.get(w) or 0)
+                conf_or_journal_across_freq += (conference_dict.get(w) or 0) 
+
           coauth_freq += (author_dict.get(auth_id) or 0)
 
         for title_word in pap.title.split():
@@ -135,7 +164,7 @@ class Feature:
         for keyword_word in pap.keywords.split():
             keyword_freq += keyword_dict[keyword_word]
 
-        ret = [num_authors, num_papers, num_conference_papers, num_journal_papers, num_conferences, num_journals, num_papers_in_year, num_papers_in_conf_or_journal, conf_or_journal, coauth_freq, title_num, title_freq, keyword_num, keyword_freq]
+        ret = [num_authors, num_papers, num_conference_papers, num_journal_papers, num_conferences, num_journals, num_papers_in_year, num_papers_in_conf_or_journal, conf_or_journal, conf_or_journal_keywords, conf_or_journal_freq, conf_or_journal_across_freq, coauth_freq, title_num, title_freq, keyword_num, keyword_freq]
 
         # Fractions
         conf_frac = float(num_conference_papers)/float(num_papers) if num_papers != 0 else 0
@@ -160,12 +189,20 @@ class Feature:
         papers_in_relevant_year = (auth.all_years.get(pap.year) or 0)
 
         all_names_in_paper = pap.author_names.get(auth.id) or [""]
-        name_in_paper = max(all_names_in_paper, key=len)
-        name_keywords = len(set(auth.name.split()) & set(name_in_paper.split()))
+        name_keywords = 0
+        for name_in_paper in all_names_in_paper:
+            name_keywords += len(set(auth.name.split()) & set(name_in_paper.split()))
+        name_keywords = float(name_keywords) / float(len(all_names_in_paper))
+        #name_in_paper = max(all_names_in_paper, key=len)
+        #name_keywords = len(set(auth.name.split()) & set(name_in_paper.split()))
 
         all_affiliations_in_paper = pap.author_affiliations.get(auth.id) or [""]
-        affiliations_in_paper = max(all_affiliations_in_paper, key=len)
-        affiliation_keywords = len(set(auth.affiliation.split()) & set(affiliations_in_paper.split()))
+        affiliation_keywords = 0
+        for affiliations_in_paper in all_affiliations_in_paper:
+            affiliation_keywords += len(set(auth.affiliation.split()) & set(affiliations_in_paper.split()))
+        affiliation_keywords = float(affiliation_keywords) / float(len(all_affiliations_in_paper))
+        #affiliations_in_paper = max(all_affiliations_in_paper, key=len)
+        #affiliation_keywords = len(set(auth.affiliation.split()) & set(affiliations_in_paper.split()))
 
         for auth_id in pap.authors.keys():
             other_auth = self.parser.authors.get(auth_id)
@@ -193,7 +230,10 @@ class Feature:
         author_dict = self.create_author_dict(res)
         paper_title_dict = self.create_title_dict(res)
         paper_keyword_dict = self.create_keyword_dict(res)
-        d = [author_dict, paper_title_dict, paper_keyword_dict]
+        conference_dict = self.create_conference_dict(res)
+        journal_dict = self.create_journal_dict(res)
+        
+        d = [author_dict, paper_title_dict, paper_keyword_dict, conference_dict, journal_dict]
 
         # Create a list of both accepted and deleted
         com_pap = self.common_papers(res)
