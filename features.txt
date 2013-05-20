@@ -1,0 +1,25 @@
+Author Based
+============
+1) Number of papers by the author id
+2) Number of conference papers by the author id
+3) Number of Journal papers by the author id
+4) Number of conferences that the author id published in
+5) Number of journals that the author id published in
+6) NUmber of active publishing years for the author id
+7) Number of authors with same surname as current author id
+8) number of authors with same affiliation as current author id
+
+Paper Based
+===========
+1) Number of authors on current paper
+2) Combined number of papers by all authors on current paper
+3) Combined number of conference papers by all authors on current paper
+4) Combined number of journal papers by all authors on current paper
+5) Combined number of conferences attened by all authors
+6) Combined number of journals attened by all authors
+7) Combined number of papers all authors published in same year as current paper
+8) Whether current paper is a in a conference/journal
+9) Combined number of papers published by all authors in same conference/journal as current paper
+10) Number of keywords in conference/journal name
+11) Term Frequency of all conference/journal keywords across the corpus
+  
