@@ -47,9 +47,9 @@ class Author:
             return
         self.num_papers += 1
         self.update_years(pap.year)
-        if pap.conference_id != 0:
+        if pap.conference_id > 0:
             self.num_conference_papers += 1
             self.update_conferences(pap.conference_id)
-        if pap.journal_id != 0:
+        if pap.journal_id > 0:
             self.num_journal_papers += 1
             self.update_journals(pap.journal_id)

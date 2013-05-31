@@ -12,12 +12,13 @@ def train(f, file_path):
   for l in file_pt.readlines():
     res = l.split(",")
     fet = f.create_features_from_res(res)
-    if ret != None:
-      ret = numpy.vstack((ret, fet))
-    else:
+    if ret == None:
       ret = fet
-  
-#  classifier = RandomForestClassifier(n_estimators=50, 
+    elif fet != None:
+      ret = numpy.vstack((ret, fet))
+    print ret.shape
+
+#  classifier = RandomForestClassifier(n_estimators=100, 
 #                                      verbose=2,
 #                                      n_jobs=1,
 #                                      min_samples_split=10,
@@ -30,7 +31,7 @@ def train(f, file_path):
                                           subsample=0.8,
                                           random_state=1)
 
-  trainX, testX, trainY, testY = train_test_split(ret[:, 1:], ret[:, 0])
+  trainX, testX, trainY, testY = train_test_split(ret[:, 3:], ret[:, 0], random_state=1)
   classifier.fit(trainX, trainY)
 
   numpy.savetxt(data_io.get_paths()["feature_path"], ret.astype(float), fmt='%f', delimiter=",")
@@ -41,14 +42,20 @@ def predict(f, classifier, file_path):
   file_pt = open(file_path, "r")
   title = file_pt.readline()
   output = open(data_io.get_paths()["submission_path"], "a")
+  tot_fet = None
   for l in file_pt.readlines():
     res = l.split(",")
     fet = f.create_features_from_res(res)
-    pred = classifier.predict_proba(fet[:, 1:fet.shape[1]])
+    if tot_fet == None:
+      tot_fet = fet
+    else:
+      tot_fet = numpy.vstack((tot_fet, fet))
+    pred = classifier.predict_proba(fet[:, 3:])
     sorted_pred = sorted(zip(res[1].split(), pred[:, 1]), key=lambda a:a[1], reverse=True)
-    print sorted_pred
+    #print sorted_pred
     output.write(res[0] + "," + " ".join(map(lambda a: a[0], sorted_pred)) + "\n")
   output.close()
+  numpy.savetxt(data_io.get_paths()["test_feature_path"], tot_fet.astype(float), fmt='%f', delimiter=",")
 
 if __name__ == "__main__":
   p = parser.Parser()
