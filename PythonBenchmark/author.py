@@ -13,15 +13,17 @@ class Author:
         self.num_conference_papers = 0
         self.num_journal_papers = 0
 
+        self.paper_title_words = dict()
         self.all_keywords = dict()
         self.all_conferences = dict()
         self.all_journals = dict()
         self.all_years = dict()
-        
+        self.all_papers = dict()     
+
     def _update_dict(self, d, key, value):
-        if key in d.keys():
+        try:
             d[key] = d[key] + value
-        else:
+        except:
             d[key] = value
     
     def num_conferences(self):
@@ -45,11 +47,32 @@ class Author:
     def update_paper(self, pap):
         if not pap:
             return
+        #if pap.id in self.all_papers.keys():
+        #    return
+        #self.all_papers[pap.id] = 1
+
         self.num_papers += 1
         self.update_years(pap.year)
         if pap.conference_id > 0:
             self.num_conference_papers += 1
             self.update_conferences(pap.conference_id)
-        if pap.journal_id > 0:
+        elif pap.journal_id > 0:
             self.num_journal_papers += 1
             self.update_journals(pap.journal_id)
+        
+        # Update paper titles and keywords
+        for w in pap.title.split():
+            try:
+              self.paper_title_words[w] = self.paper_title_words[w] + 1
+            except:
+              self.paper_title_words[w] = 1
+
+        for w in pap.keywords.split():
+            try:
+              self.all_keywords[w] = self.all_keywords[w] + 1
+            except:
+              self.all_keywords[w] = 1
+
+
+    def key(self):
+        return self.name + " " + self.affiliation

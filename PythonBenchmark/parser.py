@@ -16,6 +16,7 @@ class Parser:
         self.journals = dict()
         self.conference_freq = dict()
         self.journal_freq = dict()
+        self.paper_titles = dict()
 
     def update_paperauthor(self, curr_paper, curr_author, author_id, author_name, author_affiliation):
         if curr_author:
@@ -35,19 +36,20 @@ class Parser:
             # Titles
             raw_title = unidecode.unidecode(unicode(res[1], encoding="utf-8"))
             (name, surname) = nlp.filter_title(raw_title)
-            if surname in self.surnames.keys():
+            try:
                 self.surnames[surname] = self.surnames[surname] + 1
-            else:
+            except:
                 self.surnames[surname] = 1
 
             #Affiliations
             raw_affiliation = unidecode.unidecode(unicode(res[2], encoding="utf-8"))
             affiliation = nlp.filter_affiliation(raw_affiliation)
-            if affiliation in self.affiliations.keys():
+            try:
                 self.affiliations[affiliation] = self.affiliations[affiliation] + 1
-            else:
+            except:
                 self.affiliations[affiliation] = 1
             self.authors[int(res[0])] = author.Author(int(res[0]), name, surname, affiliation)
+
         print "Done"
         f.close()
 
@@ -64,6 +66,13 @@ class Parser:
             paper_keyword = unidecode.unidecode(unicode(res[5], encoding="utf-8"))
             filtered_keyword = nlp.filter_paper_keyword(paper_keyword)
             self.papers[int(res[0])] = paper.Paper(int(res[0]), title_words, int(res[2]), int(res[3]), int(res[4]), filtered_keyword)
+            
+            for tt in title_words.split():
+              try:
+                self.paper_titles[tt] = self.paper_titles[tt] + 1
+              except:
+                self.paper_titles[tt] = 1
+            
         print "Done"
         f.close()
 

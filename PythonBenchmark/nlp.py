@@ -2,11 +2,13 @@ import re
 
 stopwords = ["and", "of", "an", "in", "on", "de", "di", "li", "a", "for", "at", "the", "to", "as", "is", "by", ""]
 regexp_string = "[|/:;.\(\)\[\]$&*#+!'\" ?\xe2\x80\x93-]+|[0-9]+"
+regex_replace = "\xcc|\x81"
 camelcase_string = '(.)([A-Z][a-z]+)'
 surnames = ["parthasarathy", "ng"]
 
 
 def filter_title(raw_title):
+    #raw_title_lower = re.sub(regex_replace, "", raw_title.lower())
     name = re.split("[. ]+", raw_title.lower())
     name = map(lambda a: a.strip(), name)
     surname = name[-1]
